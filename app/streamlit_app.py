@@ -48,12 +48,19 @@ operations = get_operations()
 
 df = pd.DataFrame(operations)
 
+df = df[
+    ~df["libelle"].str.contains(
+        "COM CB|REMISE CB",
+        case=False,
+        na=False
+    )
+]
+
 st.info(
     """
 Type TVA :
 
 • vide = non traité
-
 • 0 = sans TVA
 
 • 5 = TVA 5,5 %
