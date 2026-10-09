@@ -120,6 +120,23 @@ def exporter_excel(df, fichier_sortie):
         )
     )
   
+    # Format numérique colonne Montant (H)
+
+    colonnes_monetaires = [
+        "H",  # Montant
+        "K",  # HT 20
+        "L",  # HT 5.5
+        "M",  # HT 10
+        "N",  # TVA 20
+        "O",  # TVA 5.5
+        "P"   # TVA 10
+    ]
+
+    for colonne in colonnes_monetaires:
+
+        for cell in ws[colonne][1:]:
+
+            cell.number_format = "#,##0.00"
 
 
     wb.save(fichier_sortie)
