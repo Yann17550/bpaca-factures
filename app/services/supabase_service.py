@@ -27,12 +27,7 @@ def insert_operations(df):
         debit = abs(montant) if montant < 0 else 0.0
         credit = montant if montant > 0 else 0.0
 
-        print(
-            montant,
-            debit,
-            credit
-        )
-        
+
         lignes.append({
             "compte": row["Compte"],
             "date": date_fr_vers_iso(row["Date"]),
@@ -71,3 +66,15 @@ def insert_operations(df):
     )
 
     return resultat
+
+def get_operations():
+
+    resultat = (
+        supabase
+        .table("operations")
+        .select("*")
+        .order("date")
+        .execute()
+    )
+
+    return resultat.data
