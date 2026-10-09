@@ -41,7 +41,6 @@ def transformer_bpaca(df):
         .astype(str)
         .str.replace(",", ".", regex=False)
         .astype(float)
-        .abs()
     )
 
     # Colonnes monétaires
