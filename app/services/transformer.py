@@ -24,7 +24,7 @@ def transformer_bpaca(df):
     # Colonnes métier
 
     df["Lien"] = ""
-    df["Type TVA"] = ""
+    df["Type TVA"] = pd.NA
 
     df["HT 20,0%"] = 0.0
     df["HT 5,5%"] = 0.0
