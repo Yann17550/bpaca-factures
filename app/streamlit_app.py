@@ -58,9 +58,10 @@ df = df[
 
 st.info(
     """
-Type TVA :
+Pour remplir le champType TVA :
 
 • vide = non traité
+
 • 0 = sans TVA
 
 • 5 = TVA 5,5 %
