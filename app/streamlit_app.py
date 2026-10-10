@@ -1,17 +1,27 @@
 import pandas as pd
 import streamlit as st
 
-from services.exercise_service import (
-    exercice_suggere,
-    lister_exercices,
-    get_exercice_actif,
-    set_exercice_actif
+from services.navigation_service import (
+    afficher_navigation
 )
-
 
 from services.supabase_service import (
     get_operations,
-    update_operation
+    update_operation,
+    insert_operations
+)
+
+from services.bpaca_import_service import (
+    lister_fichiers_bpaca,
+    get_fichier_bpaca
+)
+
+from services.csv_importer import (
+    lire_csv_bpaca
+)
+
+from services.transformer import (
+    transformer_bpaca
 )
 
 
@@ -50,17 +60,92 @@ st.set_page_config(
     layout="wide"
 )
 
-from services.navigation_service import (
-    afficher_navigation
-)
-
 page, exercice_actif = (
     afficher_navigation()
 )
 
-st.title(
-    f"📊 BPACA Factures - {exercice_actif}"
+st.subheader(
+    "📥 Import BPACA"
 )
+
+# --------------------------------------------------
+# IMPORT BPACA
+# --------------------------------------------------
+
+if page == "Import BPACA":
+
+    if "import_message" in st.session_state:
+
+        st.success(
+            st.session_state["import_message"]
+        )
+
+        del st.session_state[
+            "import_message"
+        ]
+    
+    st.subheader(
+        "📥 Import BPACA"
+    )
+
+    fichiers = lister_fichiers_bpaca()
+
+    if not fichiers:
+
+        st.warning(
+            "Aucun fichier trouvé dans BPACA_OP."
+        )
+
+        st.stop()
+
+    fichier_selectionne = st.selectbox(
+        "Fichier BPACA à importer",
+        fichiers
+    )
+
+    chemin_fichier = get_fichier_bpaca(
+        fichier_selectionne
+    )
+
+    st.caption(
+        chemin_fichier
+    )
+
+    if st.button(
+        "📥 Importer le fichier"
+    ):
+
+        try:
+
+            df_import = lire_csv_bpaca(
+                chemin_fichier
+            )
+
+            df_import = transformer_bpaca(
+                df_import
+            )
+
+            insert_operations(
+                df_import
+            )
+
+            st.session_state["import_message"] = (
+                f"{len(df_import)} opérations importées."
+            )
+
+            st.rerun()
+
+        except Exception as e:
+
+            st.error(
+                f"Erreur : {e}"
+            )
+
+    st.stop()
+
+# --------------------------------------------------
+# FUTURES PAGES
+# --------------------------------------------------
 
 if page != "Opérations":
 
@@ -69,60 +154,24 @@ if page != "Opérations":
     )
 
     st.stop()
-    
+
+# --------------------------------------------------
+# DONNÉES
+# --------------------------------------------------
+
 operations = get_operations()
 
-# -------------------------
-# EXERCICES
-# -------------------------
+df = pd.DataFrame(
+    operations
+)
 
-exercice_courant = exercice_suggere()
-
-exercices = lister_exercices()
-
-exercice_memorise = get_exercice_actif()
-
-col1, col2 = st.columns(2)
-
-with col1:
+if df.empty:
 
     st.info(
-        f"Exercice suggéré : {exercice_courant}"
+        "Aucune opération dans la base."
     )
 
-with col2:
-
-    if exercices:
-
-        if exercice_memorise in exercices:
-
-            index_defaut = exercices.index(
-                exercice_memorise
-            )
-
-        else:
-
-            index_defaut = len(exercices) - 1
-
-        exercice_actif = st.selectbox(
-            "Exercice actif",
-            exercices,
-            index=index_defaut
-        )
-
-        if exercice_actif != exercice_memorise:
-
-            set_exercice_actif(
-                exercice_actif
-            )
-
-    else:
-
-        st.warning(
-            "Aucun exercice trouvé."
-        )
-
-df = pd.DataFrame(operations)
+    st.stop()
 
 df = df[
     ~df["libelle"].str.contains(
@@ -132,9 +181,13 @@ df = df[
     )
 ]
 
+# --------------------------------------------------
+# INFORMATIONS TVA
+# --------------------------------------------------
+
 st.info(
     """
-Pour remplir le champType TVA :
+Pour remplir le champ Type TVA :
 
 • vide = non traité
 
@@ -171,42 +224,34 @@ tableau = st.data_editor(
             "Montant",
             format="%.2f"
         ),
-
         "debit": st.column_config.NumberColumn(
             "Débit",
             format="%.2f"
         ),
-
         "credit": st.column_config.NumberColumn(
             "Crédit",
             format="%.2f"
         ),
-
         "ht_20": st.column_config.NumberColumn(
             "HT 20 %",
             format="%.2f"
         ),
-
         "ht_55": st.column_config.NumberColumn(
             "HT 5,5 %",
             format="%.2f"
         ),
-
         "ht_10": st.column_config.NumberColumn(
             "HT 10 %",
             format="%.2f"
         ),
-
         "tva_20": st.column_config.NumberColumn(
             "TVA 20 %",
             format="%.2f"
         ),
-
         "tva_55": st.column_config.NumberColumn(
             "TVA 5,5 %",
             format="%.2f"
         ),
-
         "tva_10": st.column_config.NumberColumn(
             "TVA 10 %",
             format="%.2f"
@@ -214,9 +259,9 @@ tableau = st.data_editor(
     }
 )
 
-# -------------------------
-# VALIDATION IMMEDIATE
-# -------------------------
+# --------------------------------------------------
+# VALIDATION TVA
+# --------------------------------------------------
 
 tableau["etat_tva"] = (
     tableau["type_tva"]
@@ -224,28 +269,33 @@ tableau["etat_tva"] = (
 )
 
 nb_non_traites = (
-    tableau["etat_tva"] == "⏳ À traiter"
+    tableau["etat_tva"]
+    == "⏳ À traiter"
 ).sum()
 
 nb_erreurs = (
-    tableau["etat_tva"] == "🚨 ERREUR"
+    tableau["etat_tva"]
+    == "🚨 ERREUR"
 ).sum()
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
+
     st.metric(
         "Nombre d'opérations",
         len(tableau)
     )
 
 with col2:
+
     st.metric(
         "À traiter",
         nb_non_traites
     )
 
 with col3:
+
     st.metric(
         "Erreurs TVA",
         nb_erreurs
@@ -257,11 +307,13 @@ if nb_erreurs > 0:
         f"🚨 {nb_erreurs} erreur(s) TVA détectée(s)"
     )
 
-# -------------------------
+# --------------------------------------------------
 # SAUVEGARDE
-# -------------------------
+# --------------------------------------------------
 
-if st.button("💾 Enregistrer les modifications"):
+if st.button(
+    "💾 Enregistrer les modifications"
+):
 
     erreurs = []
 
@@ -270,9 +322,14 @@ if st.button("💾 Enregistrer les modifications"):
         valeur = row["type_tva"]
 
         if pd.isna(valeur):
+
             valeur = None
+
         else:
-            valeur = str(valeur).strip()
+
+            valeur = str(
+                valeur
+            ).strip()
 
         if valeur not in TVA_VALIDES:
 
@@ -287,6 +344,7 @@ if st.button("💾 Enregistrer les modifications"):
         )
 
         for erreur in erreurs:
+
             st.write(erreur)
 
         st.stop()

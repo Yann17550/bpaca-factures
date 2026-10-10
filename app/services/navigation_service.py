@@ -13,9 +13,7 @@ def afficher_navigation():
 
         st.session_state.menu_ouvert = False
 
-    col_menu, col_vide = st.columns(
-        [1, 20]
-    )
+    col_menu, col_vide = st.columns([1, 20])
 
     with col_menu:
 
@@ -32,15 +30,13 @@ def afficher_navigation():
 
     exercices = lister_exercices()
 
-    if not exercice_actif:
+    if not exercice_actif and exercices:
 
-        if exercices:
+        exercice_actif = exercices[-1]
 
-            exercice_actif = exercices[-1]
-
-            set_exercice_actif(
-                exercice_actif
-            )
+        set_exercice_actif(
+            exercice_actif
+        )
 
     page = "Opérations"
 
@@ -75,16 +71,13 @@ def afficher_navigation():
 
                     st.rerun()
 
-                    exercice_actif = (
-                        nouvel_exercice
-                    )
-
             st.markdown("---")
 
             page = st.radio(
                 "Navigation",
                 [
                     "Opérations",
+                    "Import BPACA",
                     "Fournisseurs",
                     "Factures",
                     "Paramètres"
