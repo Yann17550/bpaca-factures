@@ -1,6 +1,12 @@
 import pandas as pd
 import streamlit as st
 
+from services.exercise_service import (
+    exercice_suggere,
+    lister_exercices
+)
+
+
 from services.supabase_service import (
     get_operations,
     update_operation
@@ -45,6 +51,38 @@ st.set_page_config(
 st.title("📊 BPACA Factures")
 
 operations = get_operations()
+
+# -------------------------
+# EXERCICES
+# -------------------------
+
+exercice_courant = exercice_suggere()
+
+exercices = lister_exercices()
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    st.info(
+        f"Exercice suggéré : {exercice_courant}"
+    )
+
+with col2:
+
+    if exercices:
+
+        exercice_actif = st.selectbox(
+            "Exercice actif",
+            exercices,
+            index=len(exercices) - 1
+        )
+
+    else:
+
+        st.warning(
+            "Aucun exercice trouvé."
+        )
 
 df = pd.DataFrame(operations)
 
