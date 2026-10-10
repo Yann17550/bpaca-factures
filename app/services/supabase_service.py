@@ -114,3 +114,28 @@ def update_operation(
     )
 
     return resultat
+
+def get_cles_operations():
+
+    resultat = (
+        supabase
+        .table("operations")
+        .select(
+            "date_operation,montant,reference"
+        )
+        .execute()
+    )
+
+    cles = set()
+
+    for ligne in resultat.data:
+
+        cle = (
+            str(ligne["date_operation"]),
+            round(float(ligne["montant"]), 2),
+            str(ligne["reference"])
+        )
+
+        cles.add(cle)
+
+    return cles

@@ -1,14 +1,18 @@
 import pandas as pd
 import streamlit as st
 
-from services.navigation_service import (
-    afficher_navigation
-)
-
 from services.supabase_service import (
     get_operations,
     update_operation,
-    insert_operations
+    insert_operations,
+    get_cles_operations
+)
+from services.utils import (
+    date_fr_vers_iso
+)
+
+from services.navigation_service import (
+    afficher_navigation
 )
 
 from services.bpaca_import_service import (
@@ -125,12 +129,48 @@ if page == "Import BPACA":
                 df_import
             )
 
-            insert_operations(
-                df_import
+            cles_existantes = get_cles_operations()
+
+            df_import["cle_doublon"] = list(
+                zip(
+                    df_import["Date opération"]
+                        .apply(date_fr_vers_iso),
+
+                    df_import["Montant"]
+                        .round(2),
+
+                    df_import["Référence"]
+                        .astype(str)
+                )
             )
 
+            nb_total = len(df_import)
+
+            df_import = df_import[
+                ~df_import["cle_doublon"]
+                    .isin(cles_existantes)
+            ]
+
+            nb_importees = len(df_import)
+
+            nb_doublons = (
+                nb_total
+                - nb_importees
+            )
+
+            df_import = df_import.drop(
+                columns=["cle_doublon"]
+            )
+
+            if nb_importees > 0:
+
+                insert_operations(
+                    df_import
+                )
+
             st.session_state["import_message"] = (
-                f"{len(df_import)} opérations importées."
+                f"{nb_importees} opération(s) importée(s) | "
+                f"{nb_doublons} doublon(s) ignoré(s)"
             )
 
             st.rerun()
