@@ -3,7 +3,9 @@ import streamlit as st
 
 from services.exercise_service import (
     exercice_suggere,
-    lister_exercices
+    lister_exercices,
+    get_exercice_actif,
+    set_exercice_actif
 )
 
 
@@ -48,8 +50,26 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📊 BPACA Factures")
+from services.navigation_service import (
+    afficher_navigation
+)
 
+page, exercice_actif = (
+    afficher_navigation()
+)
+
+st.title(
+    f"📊 BPACA Factures - {exercice_actif}"
+)
+
+if page != "Opérations":
+
+    st.warning(
+        "🚧 Fonctionnalité en cours de développement"
+    )
+
+    st.stop()
+    
 operations = get_operations()
 
 # -------------------------
@@ -59,6 +79,8 @@ operations = get_operations()
 exercice_courant = exercice_suggere()
 
 exercices = lister_exercices()
+
+exercice_memorise = get_exercice_actif()
 
 col1, col2 = st.columns(2)
 
@@ -72,11 +94,27 @@ with col2:
 
     if exercices:
 
+        if exercice_memorise in exercices:
+
+            index_defaut = exercices.index(
+                exercice_memorise
+            )
+
+        else:
+
+            index_defaut = len(exercices) - 1
+
         exercice_actif = st.selectbox(
             "Exercice actif",
             exercices,
-            index=len(exercices) - 1
+            index=index_defaut
         )
+
+        if exercice_actif != exercice_memorise:
+
+            set_exercice_actif(
+                exercice_actif
+            )
 
     else:
 

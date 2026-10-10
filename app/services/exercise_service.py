@@ -251,3 +251,21 @@ def structure_exercice():
         SOUS_DOSSIERS_FIXES
         + MOIS_EXERCICE
     )
+
+def get_exercice_actif():
+
+    config = charger_config()
+
+    return config.get(
+        "exercice_actif",
+        None
+    )
+
+
+def set_exercice_actif(exercice):
+
+    config = charger_config()
+
+    config["exercice_actif"] = exercice
+
+    sauvegarder_config(config)
