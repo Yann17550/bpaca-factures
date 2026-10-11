@@ -1,4 +1,6 @@
 import streamlit as st
+from datetime import timedelta
+import pandas as pd
 
 from services.supabase_service import (
     insert_operations,
@@ -76,20 +78,58 @@ def afficher_import_bpaca():
                 df_import
             )
 
-            cles_existantes = (
-                get_cles_operations()
+            dates_import = pd.to_datetime(
+                df_import["Date"],
+                format="%d/%m/%Y"
             )
+
+
+            date_min = (
+                dates_import.min()
+                - timedelta(days=5)
+            ).strftime("%Y-%m-%d")
+
+
+            date_max = (
+                dates_import.max()
+                + timedelta(days=5)
+            ).strftime("%Y-%m-%d")
+
+
+            cles_existantes = (
+                get_cles_operations(
+                    date_min,
+                    date_max
+                )
+            )
+
 
             df_import["cle_doublon"] = list(
                 zip(
-                    df_import["Date opération"]
+                    df_import["Compte"]
+                        .astype(str)
+                        .str.strip(),
+
+
+                    df_import["Date"]
                         .apply(date_fr_vers_iso),
 
-                    df_import["Montant"]
-                        .round(2),
 
                     df_import["Référence"]
                         .astype(str)
+                        .str.strip(),
+
+
+                    df_import["Libellé"]
+                        .astype(str)
+                        .str.strip()
+                        .str.upper()
+                        .str.split()
+                        .str.join(" "),
+
+
+                    df_import["Montant"]
+                        .round(2)
                 )
             )
 

@@ -115,27 +115,62 @@ def update_operation(
 
     return resultat
 
-def get_cles_operations():
+def get_cles_operations(
+    date_min,
+    date_max
+):
+
 
     resultat = (
         supabase
         .table("operations")
         .select(
-            "date_operation,montant,reference"
+            "compte,date,reference,libelle,montant"
+        )
+        .gte(
+            "date",
+            date_min
+        )
+        .lte(
+            "date",
+            date_max
         )
         .execute()
     )
 
+
     cles = set()
+
 
     for ligne in resultat.data:
 
+
         cle = (
-            str(ligne["date_operation"]),
-            round(float(ligne["montant"]), 2),
-            str(ligne["reference"])
+            str(ligne["compte"]).strip(),
+
+
+            str(ligne["date"]),
+
+
+            str(ligne["reference"]).strip(),
+
+
+            " ".join(
+                str(ligne["libelle"])
+                .strip()
+                .upper()
+                .split()
+            ),
+
+
+            round(
+                float(ligne["montant"]),
+                2
+            )
         )
 
+
         cles.add(cle)
+
 
     return cles
