@@ -12,7 +12,32 @@ def transformer_bpaca(df):
             "Date de comptabilisation": "Date"
         }
     )
+    
+    colonnes_textes = [
+        "Compte",
+        "Libellé",
+        "Référence"
+    ]
 
+
+    for colonne in colonnes_textes:
+
+
+        df[colonne] = (
+            df[colonne]
+            .astype(str)
+            .str.replace(
+                "\u00a0",
+                " ",
+                regex=False
+            )
+            .str.replace(
+                r"\s+",
+                " ",
+                regex=True
+            )
+            .str.strip()
+        )
     # Colonne Facture
 
     df.insert(
